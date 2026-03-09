@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LensGallery – Elite Photography Portfolio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Plus+Jakarta+Sans:wght@200;300;400;600;700&display=swap" rel="stylesheet">
+    <!-- GSAP Core & ScrollTrigger -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <!-- Lenis for buttery smooth scrolling -->
+    <script src="https://unpkg.com/@studio-freight/lenis@1.0.34/dist/lenis.min.js"></script>
+    
+    <style>
+        :root {
+            --bg: #030303;
+            --card: #0a0a0a;
+            --accent: #d4af37;
+            --text-dim: rgba(255, 255, 255, 0.4);
+            --text-bright: #ffffff;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg);
+            color: var(--text-bright);
+            cursor: none;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        h1, h2, h3, h4, h5, .serif {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* Noise Overlay for premium feel */
+        .noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.04;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+
+        /* Lenis smooth scrolling reset */
+        html.lenis {
+            height: auto;
+        }
+        .lenis.lenis-smooth {
+            scroll-behavior: auto;
+        }
+        .lenis.lenis-smooth [data-lenis-prevent] {
+            overscroll-behavior: contain;
+        }
+        .lenis.lenis-stopped {
+            overflow: hidden;
+        }
+
+        /* Custom Cursor */
+        .cursor-dot,
+        .cursor-outline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            transform: translate(-50%, -50%);
+            border-radius: 50%;
+            z-index: 10000;
+            pointer-events: none;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-dot {
+            width: 6px;
+            height: 6px;
+            background-color: var(--accent);
+        }
+
+        .cursor-outline {
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(255,255,255,0.5);
+            transition: width 0.3s cubic-bezier(0.19, 1, 0.22, 1), 
+                        height 0.3s cubic-bezier(0.19, 1, 0.22, 1), 
+                        background-color 0.3s;
+        }
+
+        .cursor-hover .cursor-outline {
+            width: 80px;
+            height: 80px;
+            background-color: rgba(255, 255, 255, 1);
+            border-color: transparent;
+            mix-blend-mode: difference;
+        }
+
+        .cursor-hover .cursor-dot {
+            opacity: 0;
+        }
+
+        /* Image Reveal Mask */
+        .reveal-wrapper {
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .reveal-img {
+            transform: scale(1.2);
+            transition: transform 1.8s cubic-bezier(0.19, 1, 0.22, 1);
+            will-change: transform;
+        }
+        
+        .reveal-wrapper:hover .reveal-img {
+            transform: scale(1.02);
+        }
+
+        /* Typography Utilities */
+        .text-stroke {
+            -webkit-text-stroke: 1px var(--text-dim);
+            color: transparent;
+            transition: 0.4s;
+        }
+
+        .text-stroke:hover {
+            color: var(--accent);
+            -webkit-text-stroke: 1px var(--accent);
+        }
+
+        /* Loader */
+        .loader {
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 10001;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--text-bright);
+        }
+        
+        .loader-text {
+            font-family: 'Playfair Display', serif;
+            font-size: 3rem;
+            letter-spacing: 0.1em;
+            overflow: hidden;
+        }
+        
+        .loader-text span {
+            display: inline-block;
+            transform: translateY(100%);
+        }
+
+        .loader-progress {
+            margin-top: 2rem;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 0.8rem;
+            letter-spacing: 0.2em;
+            color: var(--text-dim);
+        }
+
+        .loader-bar-wrap {
+            width: 200px;
+            height: 1px;
+            background: rgba(255,255,255,0.1);
+            margin-top: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .loader-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            width: 0%;
+            background: var(--accent);
+        }
+
+        /* Gallery Grid Hover */
+        .gallery-item {
+            position: relative;
+            cursor: none;
+        }
+        
+        .gallery-item::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            pointer-events: none;
+        }
+
+        .gallery-item:hover::after {
+            opacity: 1;
+        }
+
+        .gallery-caption {
+            position: absolute;
+            bottom: 40px;
+            left: 40px;
+            z-index: 10;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            pointer-events: none;
+        }
+
+        .gallery-item:hover .gallery-caption {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Lightbox Modal */
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(3, 3, 3, 0.98);
+            z-index: 9998;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        .lightbox.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .lightbox-img {
+            max-width: 90vw;
+            max-height: 85vh;
+            object-fit: contain;
+            transform: scale(0.95);
+            transition: transform 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+            box-shadow: 0 30px 60px rgba(0,0,0,0.5);
+        }
+
+        .lightbox.active .lightbox-img {
+            transform: scale(1);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 40px;
+            right: 40px;
+            color: white;
+            font-size: 1.5rem;
+            letter-spacing: 0.1em;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            text-transform: uppercase;
+            cursor: none;
+            z-index: 9999;
+        }
+
+        /* Horizontal Scroll Section */
+        .horizontal-scroll-container {
+            width: 400vw; /* 4 panels */
+            height: 100vh;
+            display: flex;
+            flex-wrap: nowrap;
+        }
+        
+        .panel {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5vw;
+        }
+
+        .glass-panel {
+            background: rgba(10, 10, 10, 0.4);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.05);
+            padding: 3rem;
+        }
+
+        /* Form Inputs */
+        input, textarea {
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            font-family: inherit;
+            padding: 1rem 0;
+            width: 100%;
+            transition: border-color 0.3s;
+            outline: none;
+            resize: none;
+        }
+        input:focus, textarea:focus {
+            border-color: var(--accent);
+        }
+        input::placeholder, textarea::placeholder {
+            color: var(--text-dim);
+            font-weight: 300;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="noise"></div>
+
+    <!-- Loader -->
+    <div class="loader">
+        <div class="loader-text">
+            <span>L</span><span>E</span><span>N</span><span>S</span>
+        </div>
+        <div class="loader-progress">Loading Archive <span id="progress-text">0</span>%</div>
+        <div class="loader-bar-wrap">
+            <div class="loader-bar"></div>
+        </div>
+    </div>
+
+    <!-- Custom Cursor -->
+    <div class="cursor-dot"></div>
+    <div class="cursor-outline"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed w-full z-50 top-0 py-6 px-8 md:px-12 transition-all duration-300 flex justify-between items-center mix-blend-difference" id="navbar">
+        <a href="#" class="text-2xl tracking-widest serif uppercase hover-target">Lens.</a>
+        
+        <div class="hidden md:flex space-x-12 text-[11px] tracking-[0.2em] font-light text-[var(--text-dim)] uppercase">
+            <a href="#work" class="hover:text-white transition-colors duration-300 hover-target">Archive</a>
+            <a href="#series" class="hover:text-white transition-colors duration-300 hover-target">Series</a>
+            <a href="#philosophy" class="hover:text-white transition-colors duration-300 hover-target">Philosophy</a>
+            <a href="#contact" class="hover:text-white transition-colors duration-300 hover-target">Inquire</a>
+        </div>
+
+        <div class="hidden md:block text-[10px] tracking-widest text-[var(--text-dim)] clock">
+            Paris, <span id="time">00:00</span>
+        </div>
+
+        <button class="md:hidden flex flex-col space-y-2 hover-target group">
+            <span class="w-8 h-[1px] bg-white block transition-all group-hover:w-6 group-hover:bg-[#d4af37]"></span>
+            <span class="w-6 h-[1px] bg-white block transition-all group-hover:w-8 group-hover:bg-[#d4af37]"></span>
+        </button>
+    </nav>
+
+    <!-- Main Content Wrapper -->
+    <div id="smooth-wrapper">
+        <div id="smooth-content">
+            
+            <!-- Hero Section -->
+            <section class="h-screen w-full relative flex items-center justify-center overflow-hidden">
+                <div class="absolute inset-0 z-0">
+                    <img src="https://images.unsplash.com/photo-1492691527719-9d1e07e534b4?q=80&w=2071&auto=format&fit=crop" alt="Hero Background" class="w-full h-full object-cover opacity-[0.35] transform scale-110 hero-img">
+                    <div class="absolute inset-0 bg-gradient-to-t from-[var(--bg)] via-transparent to-transparent"></div>
+                </div>
+                
+                <div class="z-10 text-center px-4 max-w-6xl mx-auto mt-10">
+                    <h2 class="text-[var(--accent)] tracking-[0.4em] text-xs mb-8 uppercase hero-elem opacity-0 transform translate-y-8 font-light">Fine Art & Photography</h2>
+                    <h1 class="serif text-5xl md:text-8xl lg:text-[10rem] leading-[0.9] mb-8 hero-elem opacity-0 transform translate-y-8 font-normal">
+                        Visual <span class="italic font-light text-stroke">Poetry</span><br>
+                        in Motion.
+                    </h1>
+                    <p class="text-[var(--text-dim)] max-w-xl mx-auto font-light leading-relaxed text-sm md:text-base hero-elem opacity-0 transform translate-y-8">
+                        An elite curation of moments suspended in time. Exploring the intersection of shadow, light, and raw human emotion through the lens.
+                    </p>
+                </div>
+                
+                <div class="absolute bottom-12 left-1/2 transform -translate-x-1/2 flex flex-col items-center hero-elem opacity-0">
+                    <span class="text-[9px] tracking-[0.3em] text-[var(--text-dim)] uppercase mb-6 rotate-90">Scroll</span>
+                    <div class="w-[1px] h-16 bg-gradient-to-b from-[var(--text-dim)] to-transparent overflow-hidden object-contain">
+                        <div class="w-full h-[30%] bg-[var(--accent)] scroll-line-indicator"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Horizontal Scroll Series (GSAP Pin) -->
+            <section id="series" class="relative overflow-hidden bg-[var(--card)]">
+                <div class="horizontal-scroll-wrapper w-full h-screen sticky top-0 flex items-center">
+                    <div class="absolute inset-0 pointer-events-none bg-gradient-to-r from-[var(--card)] via-transparent to-transparent z-10 w-[10%]"></div>
+                    <div class="absolute top-1/2 left-12 transform -translate-y-1/2 z-20 hidden md:block mix-blend-difference">
+                        <h2 class="serif text-6xl md:text-8xl text-white opacity-20 -rotate-90 origin-left tracking-widest whitespace-nowrap">The Series</h2>
+                    </div>
+
+                    <div class="horizontal-scroll-container">
+                        <!-- Panel 1 -->
+                        <div class="panel">
+                            <div class="w-[80vw] md:w-[60vw] h-[70vh] relative reveal-wrapper hover-target gallery-item" onclick="openLightbox(this)">
+                                <img src="https://images.unsplash.com/photo-1542038784456-1ea8e935640e?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover reveal-img" alt="Series 1">
+                                <div class="gallery-caption">
+                                    <span class="text-[var(--accent)] text-[10px] tracking-[0.2em] uppercase mb-3 block">01 / Volumetric Light</span>
+                                    <h4 class="serif text-4xl">Urban Shadows</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Panel 2 -->
+                        <div class="panel">
+                            <div class="w-[80vw] md:w-[60vw] h-[70vh] relative reveal-wrapper hover-target gallery-item" onclick="openLightbox(this)">
+                                <img src="https://images.unsplash.com/photo-1510172828628-1110e5be5242?q=80&w=2074&auto=format&fit=crop" class="w-full h-full object-cover reveal-img grayscale" alt="Series 2">
+                                <div class="gallery-caption">
+                                    <span class="text-[var(--accent)] text-[10px] tracking-[0.2em] uppercase mb-3 block">02 / Monochrome</span>
+                                    <h4 class="serif text-4xl">Silent Structures</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Panel 3 -->
+                        <div class="panel">
+                            <div class="w-[80vw] md:w-[60vw] h-[70vh] relative reveal-wrapper hover-target gallery-item" onclick="openLightbox(this)">
+                                <img src="https://images.unsplash.com/photo-1493246507139-91e8fad9978e?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover reveal-img" alt="Series 3">
+                                <div class="gallery-caption">
+                                    <span class="text-[var(--accent)] text-[10px] tracking-[0.2em] uppercase mb-3 block">03 / Solitude</span>
+                                    <h4 class="serif text-4xl">Alpine Peaks</h4>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Panel 4 -->
+                        <div class="panel">
+                            <div class="w-[80vw] md:w-[60vw] h-[70vh] relative reveal-wrapper hover-target gallery-item" onclick="openLightbox(this)">
+                                <img src="https://images.unsplash.com/photo-1512314889357-e157c22f938d?q=80&w=2071&auto=format&fit=crop" class="w-full h-full object-cover reveal-img" alt="Series 4">
+                                <div class="gallery-caption">
+                                    <span class="text-[var(--accent)] text-[10px] tracking-[0.2em] uppercase mb-3 block">04 / Editorial</span>
+                                    <h4 class="serif text-4xl">Midnight Symphony</h4>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Expanded Masonry Grid Archive -->
+            <section id="work" class="pt-40 pb-20 px-4 md:px-12 max-w-[1600px] mx-auto min-h-screen">
+                <div class="flex flex-col md:flex-row justify-between items-end mb-24 section-header">
+                    <div>
+                        <h2 class="text-[var(--accent)] tracking-[0.3em] font-light text-[10px] uppercase mb-4">Complete Collection</h2>
+                        <h3 class="serif text-5xl md:text-7xl">The Archive</h3>
+                    </div>
+                    <p class="text-[var(--text-dim)] font-light text-sm max-w-sm mt-8 md:mt-0 leading-relaxed text-right hidden md:block">
+                        A definitive survey of visual explorations spanning a decade of global commissions.
+                    </p>
+                </div>
+
+                <!-- Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-x-10 md:gap-y-24">
+                    
+                    <!-- Row 1 -->
+                    <div class="md:col-span-7 grid-item">
+                        <div class="reveal-wrapper hover-target gallery-item h-[60vh] md:h-[85vh] w-full" onclick="openLightbox(this)">
+                            <img src="https://images.unsplash.com/photo-1516085216930-c93a002a8b01?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover reveal-img grayscale hover:grayscale-0 transition-all duration-700" alt="Work 1">
+                            <div class="gallery-caption">
+                                <span class="text-[var(--accent)] text-[10px] tracking-[0.2em] block mb-2 uppercase">Paris, 2024</span>
+                                <h4 class="serif text-3xl">L'ombre</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="md:col-span-5 grid-item md:mt-40">
+                        <div class="reveal-wrapper hover-target gallery-item h-[50vh] md:h-[70vh] w-full" onclick="openLightbox(this)">
+                            <img src="https://images.unsplash.com/photo-1541701494587-cb58502866ab?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover reveal-img" alt="Work 2">
+                            <div class="gallery-caption">
+                                <span class="text-[var(--accent)] text-[10px] tracking-[0.2em] block mb-2 uppercase">Abstract</span>
+                                <h4 class="serif text-3xl">Color Study I</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2 -->
+                    <div class="md:col-span-4 grid-item md:-mt-32">
+                        <div class="reveal-wrapper hover-target gallery-item h-[50vh] md:h-[70vh] w-full" onclick="openLightbox(this)">
+                            <img src="https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover reveal-img" alt="Work 3">
+                            <div class="gallery-caption">
+                                <span class="text-[var(--accent)] text-[10px] tracking-[0.2em] block mb-2 uppercase">Nature</span>
+                                <h4 class="serif text-3xl">Autumn Whispers</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="md:col-span-4 grid-item">
+                        <div class="reveal-wrapper hover-target gallery-item h-[40vh] md:h-[50vh] w-full" onclick="openLightbox(this)">
+                            <img src="https://images.unsplash.com/photo-1505142144342-fd84eb81ed73?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover reveal-img grayscale" alt="Work 4">
+                            <div class="gallery-caption">
+                                <span class="text-[var(--accent)] text-[10px] tracking-[0.2em] block mb-2 uppercase">Architecture</span>
+                                <h4 class="serif text-3xl">Brutalism</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="md:col-span-4 grid-item md:mt-32">
+                        <div class="reveal-wrapper hover-target gallery-item h-[60vh] md:h-[80vh] w-full" onclick="openLightbox(this)">
+                            <img src="https://images.unsplash.com/photo-1533105079780-92b9be482077?q=80&w=1974&auto=format&fit=crop" class="w-full h-full object-cover reveal-img" alt="Work 5">
+                            <div class="gallery-caption">
+                                <span class="text-[var(--accent)] text-[10px] tracking-[0.2em] block mb-2 uppercase">Portrait</span>
+                                <h4 class="serif text-3xl">Ethereal</h4>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Large Banner -->
+                    <div class="md:col-span-12 grid-item mt-10 md:mt-24">
+                        <div class="reveal-wrapper hover-target gallery-item h-[40vh] md:h-[70vh] w-full" onclick="openLightbox(this)">
+                            <img src="https://images.unsplash.com/photo-1469334031218-e382a71b716b?q=80&w=2070&auto=format&fit=crop" class="w-full h-full object-cover reveal-img" alt="Work 6">
+                            <div class="gallery-caption">
+                                <span class="text-[var(--accent)] text-[10px] tracking-[0.2em] block mb-2 uppercase">Panorama</span>
+                                <h4 class="serif text-4xl">The Expanse</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+
+            <!-- Philosophy / About -->
+            <section id="philosophy" class="py-40 bg-[var(--card)] relative overflow-hidden">
+                <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[var(--accent)] rounded-full mix-blend-overlay filter blur-[200px] opacity-5"></div>
+                
+                <div class="max-w-[1400px] mx-auto px-4 md:px-12 flex flex-col lg:flex-row items-center gap-20">
+                    <div class="lg:w-5/12">
+                        <div class="reveal-wrapper w-full h-[70vh] shadow-2xl">
+                            <img src="https://images.unsplash.com/photo-1554046920-90dc5823c656?q=80&w=1978&auto=format&fit=crop" alt="Photographer in Studio" class="w-full h-full object-cover reveal-img grayscale">
+                        </div>
+                    </div>
+                    
+                    <div class="lg:w-7/12 relative z-10 px-4 md:px-12">
+                        <h2 class="text-[var(--accent)] tracking-[0.3em] font-light text-[10px] uppercase mb-8">The Philosophy</h2>
+                        <h3 class="serif text-5xl md:text-6xl mb-10 leading-[1.1]">Light is the ink, <br><span class="italic text-[var(--text-dim)] font-light">shadow is the canvas.</span></h3>
+                        
+                        <div class="space-y-8 text-[var(--text-dim)] font-light leading-loose text-[15px]">
+                            <p>
+                                With over a decade of experience traversing the globe, LensGallery specializes in capturing the profound subtleties of human emotion, striking architectural geometries, and the untamed beauty of natural landscapes.
+                            </p>
+                            <p>
+                                My approach is rooted in observation rather than orchestration. I seek those fleeting, authentic moments where light perfectly sculpts the subject, revealing truths that words often fail to articulate. Every frame is a deliberately composed piece of visual poetry intended to evoke deep emotional resonance.
+                            </p>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-8 mt-16 pt-16 border-t border-white/5">
+                            <div>
+                                <span class="block text-4xl serif mb-3 text-white">15<span class="text-[var(--accent)]">+</span></span>
+                                <span class="text-[9px] uppercase tracking-[0.2em] text-[var(--text-dim)] font-light">Years Active</span>
+                            </div>
+                            <div>
+                                <span class="block text-4xl serif mb-3 text-white">40</span>
+                                <span class="text-[9px] uppercase tracking-[0.2em] text-[var(--text-dim)] font-light">Countries</span>
+                            </div>
+                            <div>
+                                <span class="block text-4xl serif mb-3 text-white">200<span class="text-[var(--accent)]">+</span></span>
+                                <span class="text-[9px] uppercase tracking-[0.2em] text-[var(--text-dim)] font-light">Features</span>
+                            </div>
+                            <div>
+                                <span class="block text-4xl serif mb-3 text-white">12</span>
+                                <span class="text-[9px] uppercase tracking-[0.2em] text-[var(--text-dim)] font-light">Awards</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Connect / Footer Form -->
+            <footer id="contact" class="py-40 px-4 md:px-12 relative overflow-hidden bg-[var(--bg)]">
+                <div class="max-w-[1400px] mx-auto">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-20">
+                        <div>
+                            <h2 class="serif text-7xl md:text-9xl mb-8 leading-[0.9] hover-target cursor-none transition-colors duration-500 hover:text-[var(--accent)]">
+                                Let's<br><span class="italic text-stroke font-light">create.</span>
+                            </h2>
+                            <p class="text-[var(--text-dim)] font-light mb-16 tracking-wide max-w-sm leading-relaxed text-sm">
+                                Available for global commissions, editorial assignments, and fine art documentation. Direct all inquiries through the form or via email.
+                            </p>
+                            
+                            <a href="mailto:studio@lensgallery.com" class="text-xl md:text-2xl font-light hover-target hover:text-[var(--accent)] transition-all inline-block group">
+                                studio@lensgallery.com
+                                <span class="block w-0 h-[1px] bg-[var(--accent)] mt-2 transition-all duration-500 group-hover:w-full"></span>
+                            </a>
+                        </div>
+                        
+                        <div class="glass-panel w-full max-w-xl mx-auto lg:ml-auto rounded-sm relative">
+                            <h4 class="text-[10px] tracking-[0.3em] uppercase text-[var(--accent)] mb-10">Inquiry Form</h4>
+                            <form action="#" class="space-y-8" onsubmit="event.preventDefault(); alert('Message Form Demo - Premium Design Active');">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                    <input type="text" placeholder="First Name *" class="hover-target" required>
+                                    <input type="text" placeholder="Last Name" class="hover-target">
+                                </div>
+                                <input type="email" placeholder="Email Address *" class="hover-target" required>
+                                <div class="relative">
+                                    <select class="w-full bg-transparent border-b border-white/20 text-[var(--text-dim)] py-4 outline-none hover-target appearance-none rounded-none text-sm font-light">
+                                        <option value="" disabled selected>Subject of Inquiry</option>
+                                        <option value="editorial">Editorial Commission</option>
+                                        <option value="commercial">Commercial Campaign</option>
+                                        <option value="print">Fine Art Print</option>
+                                        <option value="other">Other Inquiry</option>
+                                    </select>
+                                    <span class="absolute right-0 top-1/2 -translate-y-1/2 text-[var(--accent)] pointer-events-none text-xs">▼</span>
+                                </div>
+                                <textarea placeholder="Project Details *" rows="4" class="hover-target" required></textarea>
+                                
+                                <button type="submit" class="mt-8 hover-target bg-transparent border border-[var(--accent)] text-[var(--accent)] text-[10px] tracking-[0.2em] uppercase px-10 py-5 hover:bg-[var(--accent)] hover:text-[var(--bg)] transition-colors duration-300 w-full sm:w-auto">
+                                    Submit Inquiry
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-40 pt-10 border-t border-white/10 flex flex-col md:flex-row justify-between items-center text-[10px] tracking-[0.2em] text-[var(--text-dim)] font-light uppercase">
+                        <div class="mb-6 md:mb-0">
+                            &copy; 2026 LensGallery. All Rights Reserved.
+                        </div>
+                        
+                        <div class="flex space-x-10">
+                            <a href="#" class="hover-target hover:text-white transition-colors relative group">
+                                Instagram
+                                <span class="absolute -bottom-1 left-0 w-0 h-[1px] bg-white transition-all duration-300 group-hover:w-full"></span>
+                            </a>
+                            <a href="#" class="hover-target hover:text-white transition-colors relative group">
+                                Behance
+                                <span class="absolute -bottom-1 left-0 w-0 h-[1px] bg-white transition-all duration-300 group-hover:w-full"></span>
+                            </a>
+                            <a href="#" class="hover-target hover:text-white transition-colors relative group">
+                                Vogue
+                                <span class="absolute -bottom-1 left-0 w-0 h-[1px] bg-white transition-all duration-300 group-hover:w-full"></span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+            
+        </div>
+    </div>
+
+    <!-- Lightbox Modal -->
+    <div class="lightbox" id="lightbox">
+        <button class="lightbox-close hover-target" onclick="closeLightbox()">[ CLOSE ]</button>
+        <img src="" alt="Fullscreen Image" class="lightbox-img" id="lightbox-img">
+    </div>
+
+    <script>
+        // Set local time
+        function updateClock() {
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute:'2-digit' });
+            document.getElementById('time').textContent = timeString;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Lenis Smooth Scroll Setup
+        const lenis = new Lenis({
+            duration: 1.2,
+            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)), 
+            direction: 'vertical',
+            gestureDirection: 'vertical',
+            smooth: true,
+            mouseMultiplier: 1,
+            smoothTouch: false,
+            touchMultiplier: 2,
+            infinite: false,
+        });
+
+        // Integrate Lenis with GSAP ScrollTrigger
+        lenis.on('scroll', ScrollTrigger.update);
+
+        gsap.ticker.add((time) => {
+            lenis.raf(time * 1000);
+        });
+
+        gsap.ticker.lagSmoothing(0);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            gsap.registerPlugin(ScrollTrigger);
+
+            // Loader Logic & Progress
+            let progress = 0;
+            const progressText = document.getElementById('progress-text');
+            const loaderBar = document.querySelector('.loader-bar');
+            
+            const interval = setInterval(() => {
+                progress += Math.floor(Math.random() * 10) + 1;
+                if (progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    
+                    // Loader End Animation
+                    const tlLoader = gsap.timeline();
+                    tlLoader.to(".loader-text span", {
+                        y: -100,
+                        opacity: 0,
+                        duration: 0.8,
+                        stagger: 0.1,
+                        ease: "power3.in"
+                    })
+                    .to([".loader-progress", ".loader-bar-wrap"], {
+                        opacity: 0,
+                        duration: 0.5
+                    }, "-=0.4")
+                    .to(".loader", {
+                        yPercent: -100,
+                        duration: 1.2,
+                        ease: "expo.inOut"
+                    })
+                    .to(".hero-img", {
+                        scale: 1,
+                        opacity: 0.6,
+                        duration: 2.5,
+                        ease: "power3.out"
+                    }, "-=1.2")
+                    .to(".hero-elem", {
+                        y: 0,
+                        opacity: 1,
+                        duration: 1.2,
+                        stagger: 0.1,
+                        ease: "power3.out"
+                    }, "-=2");
+                }
+                
+                progressText.innerText = progress;
+                loaderBar.style.width = progress + "%";
+            }, 60);
+
+            // Custom Cursor Customization
+            const cursorDot = document.querySelector('.cursor-dot');
+            const cursorOutline = document.querySelector('.cursor-outline');
+            const hoverTargets = document.querySelectorAll('.hover-target, a, button, .gallery-item');
+
+            let showCursor = false;
+
+            window.addEventListener('mousemove', (e) => {
+                if (!showCursor) {
+                    gsap.to([cursorDot, cursorOutline], { opacity: 1, duration: 0.5 });
+                    showCursor = true;
+                }
+                
+                const posX = e.clientX;
+                const posY = e.clientY;
+
+                // Move dot instantly
+                gsap.to(cursorDot, {
+                    x: posX,
+                    y: posY,
+                    duration: 0.1
+                });
+
+                // Move outline with delay
+                gsap.to(cursorOutline, {
+                    x: posX,
+                    y: posY,
+                    duration: 0.4,
+                    ease: "power2.out"
+                });
+            });
+
+            // Hover state for cursor
+            hoverTargets.forEach(target => {
+                target.addEventListener('mouseenter', () => {
+                    document.body.classList.add('cursor-hover');
+                });
+                target.addEventListener('mouseleave', () => {
+                    document.body.classList.remove('cursor-hover');
+                });
+            });
+
+            // Scroll indicator line animation in Hero
+            gsap.to('.scroll-line-indicator', {
+                y: 50,
+                duration: 1.5,
+                repeat: -1,
+                ease: "power1.inOut",
+                yoyo: true
+            });
+
+            // GSAP Scroll Animations for Grid Items
+            const gridItems = document.querySelectorAll('.grid-item');
+            gridItems.forEach((item) => {
+                gsap.fromTo(item, 
+                    { opacity: 0, y: 100 },
+                    {
+                        scrollTrigger: {
+                            trigger: item,
+                            start: "top 85%",
+                            end: "top 50%",
+                            scrub: 1
+                        },
+                        opacity: 1,
+                        y: 0,
+                        ease: "none"
+                    }
+                );
+            });
+
+            // GSAP Navbar blend effect
+            ScrollTrigger.create({
+                start: "top -50",
+                end: 99999,
+                toggleClass: {className: "glass-panel", targets: "#navbar"}
+            });
+
+            // Horizontal Scroll Section Pinning & Scrolling
+            const horizontalScrollWrapper = document.querySelector('.horizontal-scroll-wrapper');
+            const horizontalScrollContainer = document.querySelector('.horizontal-scroll-container');
+            const horizontalSection = document.getElementById('series');
+            
+            // Set up the GSAP animation for horizontal scroll
+            let horizontalTween = gsap.to(horizontalScrollContainer, {
+                x: () => -(horizontalScrollContainer.scrollWidth - window.innerWidth),
+                ease: "none",
+                scrollTrigger: {
+                    trigger: horizontalSection,
+                    start: "top top",
+                    end: () => "+=" + (horizontalScrollContainer.scrollWidth - window.innerWidth),
+                    pin: true,
+                    scrub: 1,
+                    invalidateOnRefresh: true,
+                    anticipatePin: 1
+                }
+            });
+
+        });
+
+        // Lightbox Functionality
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightbox-img');
+
+        function openLightbox(element) {
+            // Find the image inside the clicked wrapper
+            const img = element.querySelector('img');
+            if(img) {
+                // Disable lenis smooth scrolling temporarily
+                lenis.stop();
+                lightboxImg.src = img.src;
+                lightbox.classList.add('active');
+                
+                // Animate custom cursor state
+                document.body.classList.remove('cursor-hover');
+            }
+        }
+
+        function closeLightbox() {
+            lightbox.classList.remove('active');
+            // Re-enable lenis smooth scrolling after transition
+            setTimeout(() => {
+                lenis.start();
+            }, 500); // matches CSS transition duration
+        }
+
+        // Close on esc key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === "Escape" && lightbox.classList.contains('active')) {
+                closeLightbox();
+            }
+        });
+
+    </script>
+</body>
+</html>
