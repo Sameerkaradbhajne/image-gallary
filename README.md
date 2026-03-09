@@ -4,43 +4,53 @@
 
 A visually stunning, highly interactive photography portfolio website crafted for fine art and photography. Built with a focus on immersive user experience, it blends modern web technologies with a premium aesthetic to showcase visual poetry in motion.
 
-**[🔗 View Live Demo](#)** _(Replace '#' with your actual live link)_
+## 🌟 Overview
+
+LensGallery was originally prototyped in vanilla HTML and has now been fully migrated into a highly scalable **React application** using **Vite**. This new architecture utilizes **Tailwind CSS** for elegant styling and **Shadcn UI (Radix Primitives)** for accessible, interactive components.
 
 ## ✨ Features
 
-- **Premium Aesthetic:** Custom cursor, subtle noise overlay, and a sleek dark mode theme create an elite, cinematic feel.
-- **Buttery-Smooth Scrolling:** Powered by [Lenis](https://lenis.studiofreight.com/) for fluid, frictionless scroll mechanics.
-- **Dynamic Animations:** Uses [GSAP](https://gsap.com/) and ScrollTrigger for sophisticated animations, including a spectacular horizontal scroll section for featured series.
-- **Elegant Layouts:** Features a beautifully designed masonry grid archive and refined typography using Tailwind CSS.
+- **Premium Aesthetic:** Custom cursor, authentic film grain overlay, and a sleek dark mode theme create an elite, cinematic feel.
+- **Dynamic Animations:** Uses framer-motion and Tailwind-animate for sophisticated interactions, including a spectacular horizontal scroll section for featured series.
+- **Elegant Components:** Features a beautifully designed masonry grid archive and refined typography using Tailwind CSS.
 - **Interactive Exhibit:** Includes a customized lightbox for full-screen image viewing and image reveal masks on hover.
 - **Fully Responsive:** Adapts seamlessly across all devices, from mobile phones to high-resolution desktop monitors.
 
 ## 🛠️ Technologies Used
 
-- **HTML5 & Custom CSS**
-- **Tailwind CSS** (via CDN for rapid styling)
-- **GSAP & ScrollTrigger** (for scroll-bound animations)
-- **Lenis** (for smooth scrolling)
-- **Google Fonts** (Playfair Display & Plus Jakarta Sans)
+- **React 18** (UI Library)
+- **Vite** (Build Tool & Dev Server)
+- **Tailwind CSS** (Styling)
+- **Shadcn UI** (Component Library)
+- **Lucide React** (Icons)
+- **TypeScript** (Static Typing)
 
 ## 🚀 Getting Started
 
-To run this project locally, simply follow these steps:
+To run this modern React project locally, follow these steps:
 
 1. **Clone the repository:**
    ```bash
-   git clone https://github.com/yourusername/lensgallery.git
+   git clone https://github.com/Sameerkaradbhajne/image-gallary.git
    ```
 2. **Navigate to the project directory:**
    ```bash
-   cd lensgallery
+   cd image-gallary
    ```
-3. **Run the Project:**
-   Open `index.html` in your preferred web browser. Alternatively, use an extension like **Live Server** in VS Code for a better development experience.
+3. **Install dependencies:**
+   ```bash
+   npm install
+   ```
+4. **Start the development server:**
+   ```bash
+   npm run dev
+   ```
+5. **Open in your browser:**
+   Navigate to `http://localhost:8080` (or the port provided in your terminal).
 
 ## 🤝 Contributing
 
-Contributions, issues, and feature requests are always welcome! Feel free to check the [issues page](https://github.com/yourusername/lensgallery/issues) if you have any suggestions.
+Contributions, issues, and feature requests are always welcome! Feel free to check the [issues page](https://github.com/Sameerkaradbhajne/image-gallary/issues) if you have any suggestions.
 
 ## 📜 License
 
